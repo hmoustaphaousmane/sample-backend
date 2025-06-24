@@ -1,0 +1,16 @@
+{
+  "name": "sample-backend",
+  "version": "1.0.0",
+  "description": "A sample backend project",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "sample",
+    "backend",
+    "express"
+  ],
+  "author": "Hassane M. O.",
+  "license": "ISC"
+}
