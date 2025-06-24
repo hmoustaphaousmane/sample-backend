@@ -12,5 +12,8 @@
     "express"
   ],
   "author": "Hassane M. O.",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
 }
