@@ -1,6 +1,17 @@
 const express = require("express");
-const todoRouter = require("./router");
+const mongoose = require("mongoose");
 require("dotenv").config();
+
+const todoRouter = require("./router");
+
+// mongoose.connect("mongodb://localhost:27017/todo-test-db")
+mongoose.connect(process.env.MONGODB_URI)
+.then(() => {
+    console.log("Connected to database");
+})
+.catch(err => {
+    console.log("Ann error occured while trying to connect::::", err);
+});
 
 const app = express();
 const PORT = 3000;

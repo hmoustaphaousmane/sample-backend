@@ -1,113 +1,124 @@
-const transporter = require("../utility/sendEmail")
+const transporter = require("../utility/sendEmail");
+const todoModel = require("../schema/todo");
+const joi = require("joi"); // form validation library
 
-let todo = [];
-
-const getAllTodo = (req, res) => {
+const getAllTodo = async (req, res) => {
+  try {
+    const todo = await todoModel.find();
     res.send(todo);
-}
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      error,
+    });
+  }
+};
 
 const addNewTodo = (req, res) => {
-    console.log(req.body);
+  console.log(req.body);
 
-    const id = Math.floor(Math.random() * 10000);
-    console.log(typeof (id));
+  const title = req.body.title;
+  const description = req.body.description;
 
-    const title = req.body.title;
-    const description = req.body.description;
+  const newTodo = todoModel.create({
+    title,
+    description,
+  });
 
-    todo.push(
-        {
-            id,
-            title,
-            description,
-            isDone: false
-        }
-    );
-
-    transporter.sendMail({
-        from: "sender@gmail.com",
-        to: "receiver@gmail.com",
-        subject: "Todo [[Created todo]]",
-        html: `
+  transporter.sendMail({
+    from: "sender@gmail.com",
+    to: "receiver@gmail.com",
+    subject: "Todo [[Created todo]]",
+    html: `
             <h1>You've added a new todo: ${req.body.title}</h1>
             <div>${req.body.description}</div>
-        `
-    })
+        `,
+  });
 
-    res.status(201).send({
-        message: "Todo added successfully",
-        todo
+  res.status(201).send({
+    message: "Todo added successfully",
+    newTodo,
+  });
+};
+
+const getSingleTodo = async (req, res) => {
+  const id = req.params.id;
+  console.log(id);
+
+  const todo = await todoModel.findById(id);
+
+  if (!todo) {
+    res.status(404).send({
+      message: "Not todo found",
     });
-}
+    return;
+  }
 
-const getSingleTodo = (req, res) => {
-    const id = req.params.id;
-    console.log(id);
+  res.send({
+    message: "Todo found",
+    todo,
+  });
+};
 
+const updateTodoStatus = async (req, res) => {
+  const id = req.params.id;
+  const isDone = req.body.isDone;
+  //   console.log(id, isDone);
 
-    let todoFound;
+  const schema = joi
+    .string()
+    .valid("pending", "ongoing", "completed")
+    .required()
+    // .messages({
+    //     "any.valid": "isDone can only table 'pending', 'ongoing, 'completed'"
+    // }); // TODO: search for how to costomize error messages
 
-    for (let i = 0; i < todo.length; i++) {
-        if (todo[i].id == id) {
-            todoFound = todo[i];
-            break;
-        }
-    }
+  const { error } = schema.validate(isDone);
 
-    if (!todoFound) {
-        res.status(404).send("Todo not found")
-        return
-    }
-
-    res.send({
-        message: "Todo found",
-        todoFound
+  if (error) {
+    res.status(422).send({
+      message: error.message,
     });
-}
+    return;
+  }
 
-const updateTodoStatus = (req, res) => {
-    const id = req.params.id;
-    const isDone = req.body.isDone;
+  const doesTodoExist = await todoModel.findById(id);
 
-    const updateTodo = [];
+  if (!doesTodoExist) {
+    res.status(404).send("Todo does not exist");
+    return;
+  }
 
-    for (let i = 0; i < todo.length; i++) {
-        if (todo[i].id == id) {
-            todo[i].isDone = isDone;
-        }
-        updateTodo.push(todo[i]);
-    }
-    todo = updateTodo;
+  const todo = await todoModel.findByIdAndUpdate(
+    id,
+    {
+      todoStatus: isDone,
+    },
+    { new: true }
+  ); // {new: true} allows to always to send the new update version
 
-    res.send({
-        message: "Todo update successfully",
-        todo
-    })
-}
+  res.send({
+    message: "Todo update successfully",
+    todo,
+  });
+};
 
-const deleteTodo = (req, res) => {
-    const id = req.params.id;
-    let deletedTodo;
+// Popular libraries for form validations: joi, zod, yup
 
-    const updateTodo = [];
-    for (let i = 0; i < todo.length; i++) {
-        if (todo[i].id != id) {
-            updateTodo.push(todo[i]);
-        } else {
-            deletedTodo = todo[i];
-        }
-    }
-    todo = updateTodo;
+const deleteTodo = async (req, res) => {
+  const id = req.params.id;
+  let deletedTodo = await todoModel.findByIdAndDelete(id);
 
-    res.send({
-        message: "Todo deleted successfulle"
-    })
-}
+  res.send({
+    message: "Todo deleted successfullY",
+    deletedTodo,
+  });
+};
 
 module.exports = {
-    addNewTodo,
-    getAllTodo,
-    getSingleTodo,
-    updateTodoStatus,
-    deleteTodo
-}
+  addNewTodo,
+  getAllTodo,
+  getSingleTodo,
+  updateTodoStatus,
+  deleteTodo,
+};
