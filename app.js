@@ -2,7 +2,8 @@ const express = require("express");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
-const todoRouter = require("./router");
+const todoRouter = require("./router/router");
+const authRouter = require("./router/userRouter");
 
 // mongoose.connect("mongodb://localhost:27017/todo-test-db")
 mongoose.connect(process.env.MONGODB_URI)
@@ -19,7 +20,8 @@ const PORT = 3000;
 // Midleware
 app.use(express.json());
 
-app.use("/todo", todoRouter)
+app.use("/auth", authRouter);
+app.use("/todo", todoRouter);
 
 app.listen(PORT, () => {
     console.log(`server has started on port ${PORT}`);
