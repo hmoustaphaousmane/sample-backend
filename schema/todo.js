@@ -6,6 +6,11 @@ const schema = new mongoose.Schema(
       type: String,
       require: true,
     },
+    userId: {
+      type: mongoose.Types.ObjectId,
+      ref: "users",
+      required: true
+    },
     description: {
       type: String,
       require: true,

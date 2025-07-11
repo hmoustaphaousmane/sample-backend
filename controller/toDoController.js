@@ -4,7 +4,9 @@ const joi = require("joi"); // form validation library
 
 const getAllTodo = async (req, res) => {
   try {
-    const todo = await todoModel.find();
+    console.log("Get decoded value:", req.decoded);
+    
+    const todo = await todoModel.find({userId: req.decoded.userId});
     res.send(todo);
   } catch (error) {
     console.log(error);
@@ -14,15 +16,16 @@ const getAllTodo = async (req, res) => {
   }
 };
 
-const addNewTodo = (req, res) => {
+const addNewTodo = async (req, res) => {
   console.log(req.body);
 
   const title = req.body.title;
   const description = req.body.description;
 
-  const newTodo = todoModel.create({
+  const newTodo = await todoModel.create({
     title,
     description,
+    userId: req.decoded.userId
   });
 
   transporter.sendMail({
@@ -107,6 +110,15 @@ const updateTodoStatus = async (req, res) => {
 
 const deleteTodo = async (req, res) => {
   const id = req.params.id;
+  let todo = await todoModel.findById(id);
+
+  if (todo.userId != req.decoded.userId) {
+    res.status(401).send({
+      message: "This action is forbidden."
+    });
+    return;
+  }
+
   let deletedTodo = await todoModel.findByIdAndDelete(id);
 
   res.send({
