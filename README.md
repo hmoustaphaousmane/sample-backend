@@ -159,3 +159,7 @@ Replace `<id>` with the actual todo ID.
   "message": "Todo deleted successfulle"
 }
 ```
+
+### Authenticaiton
+
+[JWT](https://jwt.io)
