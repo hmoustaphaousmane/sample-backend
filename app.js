@@ -5,6 +5,7 @@ require("dotenv").config();
 const todoRouter = require("./router/router");
 const authRouter = require("./router/userRouter");
 const uploads = require("./utility/multerConfig")
+const uploadFile = require("./utility/fileUpload");
 
 mongoose.connect(process.env.MONGODB_URI)
 .then(() => {
@@ -23,10 +24,14 @@ app.use(express.json());
 app.use("/auth", authRouter);
 app.use("/todo", todoRouter);
 
-app.post("/file-uploads", uploads.single("file"), (req, res) => {
+app.post("/file-uploads", uploads.single("file"), async (req, res) => {
     console.log("File propreties", req.file);
+    const fileDetails = await  uploadFile(req.file);
+console.log("File details:", fileDetails);
+
     res.send({
-        message: "File uploaded successfully"
+        message: "File uploaded successfully",
+        fileDetails
     });
 });
 
