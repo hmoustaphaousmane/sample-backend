@@ -4,12 +4,13 @@ const router = express.Router();
 
 const todoController = require("../controller/toDoController");
 const checkIfLoggedIn = require("../middleware/checkIfLoggedIn");
+const roleBasedAccess = require("../middleware/reoleBasedAccess");
 
 router.use(checkIfLoggedIn);
 
 // Todo Router
 router.get("", todoController.getAllTodo);
-router.post("/todo", todoController.addNewTodo);
+router.post("/todo", roleBasedAccess(["admin"]), todoController.addNewTodo);
 router.get("/single/:id", todoController.getSingleTodo);
 router.patch("/:id", todoController.updateTodoStatus);
 router.delete("/:id", todoController.deleteTodo);

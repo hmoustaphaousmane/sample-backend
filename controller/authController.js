@@ -9,7 +9,7 @@ const generateOTP = require("../utility/generateOtp");
 const smtp = require("../utility/sendEmail");
 
 const register = async (req, res) => {
-  const { fullName, email, password } = req.body;
+  const { fullName, email, role, password } = req.body;
 
   // todo: verify that the email and password are valid using joi
 
@@ -27,6 +27,7 @@ const register = async (req, res) => {
   const newUser = await userModel.create({
     fullName,
     email,
+    role,
     password: hashedPassword,
   });
 
@@ -39,6 +40,7 @@ const register = async (req, res) => {
     userId: newUser._id,
     purpose: "verify-email",
   });
+  // console.log(otpDetails);
 
   await smtp.sendMail({
     from: process.env.UERNAME,
@@ -121,7 +123,11 @@ const login = async (req, res) => {
   }
 
   const token = jwt.sign(
-    { userId: userDetail.id, email: userDetail.email },
+    {
+      userId: userDetail.id,
+      email: userDetail.email,
+      role: userDetail.role,
+    },
     process.env.JWT_KEY
   );
 
@@ -131,7 +137,7 @@ const login = async (req, res) => {
       fullName: userDetail.fullName,
       email: userDetail.email,
     },
-    token
+    token,
   });
 };
 

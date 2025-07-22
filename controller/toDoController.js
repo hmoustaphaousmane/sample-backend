@@ -6,7 +6,7 @@ const getAllTodo = async (req, res) => {
   try {
     console.log("Get decoded value:", req.decoded);
     
-    const todo = await todoModel.find({userId: req.decoded.userId});
+    const todo = await todoModel.find();
     res.send(todo);
   } catch (error) {
     console.log(error);
@@ -25,7 +25,7 @@ const addNewTodo = async (req, res) => {
   const newTodo = await todoModel.create({
     title,
     description,
-    userId: req.decoded.userId
+    userId: req.decoded.userId,
   });
 
   transporter.sendMail({
