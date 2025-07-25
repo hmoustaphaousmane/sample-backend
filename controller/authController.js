@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const { v4 } = require("uuid");
 const jwt = require("jsonwebtoken");
+const Joi = require("joi");
 
 const userModel = require("../schema/user");
 const otpModel = require("../schema/otp");
@@ -11,7 +12,27 @@ const smtp = require("../utility/sendEmail");
 const register = async (req, res) => {
   const { fullName, email, role, password } = req.body;
 
-  // todo: verify that the email and password are valid using joi
+  // verify that the email and password are valid using Joi
+  const { error } = Joi.object({
+    fullName: Joi.string().min(4).required(),
+    email: Joi.string()
+      .email({ tlds: { allow: false } })
+      .required(),
+    password: Joi.string().min(8).alphanum().required(),
+    role: Joi.string().valid("customer", "admin"),
+  }).validate({
+    fullName,
+    email,
+    password,
+    role,
+  });
+
+  if (error) {
+    res.status(400).send({
+      errorMessage: error.message,
+    });
+    return;
+  }
 
   const emailExists = await userModel.findOne({ email });
 
@@ -105,6 +126,24 @@ const login = async (req, res) => {
   const { email, password } = req.body;
 
   const userDetail = await userModel.findOne({ email });
+
+  const { error } = Joi.object({
+    email: Joi.string()
+      .email({ tlds: { allow: false } })
+      .required(),
+    password: Joi.string().min(8).alphanum().required().messages({
+      "string.min": "Password has to be at least 8 caracters long.",
+    "string.empty": "Password cannot be empty.",
+    "any.required": "The password field is required."
+    }),
+  }).validate(req.body);
+
+  if (error) {
+    res.status(400).send({
+      errorMessage: error.message,
+    });
+    return;
+  }
 
   if (!userDetail) {
     res.status(404).send({

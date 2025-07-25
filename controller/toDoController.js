@@ -1,11 +1,11 @@
 const transporter = require("../utility/sendEmail");
 const todoModel = require("../schema/todo");
-const joi = require("joi"); // form validation library
+const Joi = require("joi"); // form validation library
 
 const getAllTodo = async (req, res) => {
   try {
     console.log("Get decoded value:", req.decoded);
-    
+
     const todo = await todoModel.find();
     res.send(todo);
   } catch (error) {
@@ -16,11 +16,46 @@ const getAllTodo = async (req, res) => {
   }
 };
 
+const validateTodo = (title, description) =>
+  Joi
+    .object({
+      title: Joi.string().min(4).required().messages({
+        "string.min": "Titile must be be at least 4 caracters long.",
+      }),
+      description: Joi.string().min(25).required().messages({
+        "string.min": "Description must be be at least 25 caracters long.",
+      }),
+    })
+    .min(1)
+    .required()
+    .validate({ title, description });
+
 const addNewTodo = async (req, res) => {
   console.log(req.body);
 
   const title = req.body.title;
   const description = req.body.description;
+
+  const { error } = Joi
+    .object({
+      title: Joi.string().min(4).required().messages({
+        "string.min": "Titile must be be at least 4 caracters long.",
+      }),
+      description: Joi.string().min(25).required().messages({
+        "string.min": "Description must be be at least 25 caracters long.",
+      }),
+    })
+    .min(1)
+    .required()
+    .validate({ title, description });
+
+  if (error) {
+    console.log("An error occured");
+    res.status(400).send({
+      errorMessage: error.message,
+    });
+    return;
+  }
 
   const newTodo = await todoModel.create({
     title,
@@ -41,6 +76,61 @@ const addNewTodo = async (req, res) => {
   res.status(201).send({
     message: "Todo added successfully",
     newTodo,
+  });
+};
+
+const addMultipleTodos = async (req, res) => {
+  const { todos } = req.body;
+  // console.log(todos);
+
+  const { error } = Joi
+    .object({
+      todos: Joi
+        .array()
+        .items({
+          title: Joi.string().required(),
+          description: Joi.string().required(),
+        })
+        .min(2)
+        .required()
+        .messages({
+          "array.min": "Todo array must contain at leat 2 todos",
+        }),
+    })
+    .validate({ todos });
+
+  // const { error } = Joi.array({
+  //   title: Joi.string().required(),
+  //   description: Joi.string().required(),
+  // })
+  //   .min(1)
+  //   .required()
+  //   .valid(todos);
+
+  if (error) {
+    console.log("An error occured");
+    res.status(400).send({
+      errorMessage: error.message,
+    });
+    return;
+  }
+
+  const todosWithUser = todos.map((todo) => {
+    todo.userId = req.decoded.userId;
+    return todo;
+  });
+
+  const newTodos = await todoModel.create(todosWithUser);
+
+  if (!newTodos) {
+    res.send({
+      message: "no todo created",
+    });
+  }
+
+  res.status(201).send({
+    message: "Todos created",
+    newTodos,
   });
 };
 
@@ -68,13 +158,13 @@ const updateTodoStatus = async (req, res) => {
   const isDone = req.body.isDone;
   //   console.log(id, isDone);
 
-  const schema = joi
+  const schema = Joi
     .string()
     .valid("pending", "ongoing", "completed")
     .required()
-    // .messages({
-    //     "any.valid": "isDone can only table 'pending', 'ongoing, 'completed'"
-    // }); // TODO: search for how to costomize error messages
+    .messages({
+      "any.only": "isDone can only be one of: 'pending', 'ongoing, or 'completed'",
+    }); // costomized error messages
 
   const { error } = schema.validate(isDone);
 
@@ -106,7 +196,7 @@ const updateTodoStatus = async (req, res) => {
   });
 };
 
-// Popular libraries for form validations: joi, zod, yup
+// Popular libraries for form validations: Joi, zod, yup
 
 const deleteTodo = async (req, res) => {
   const id = req.params.id;
@@ -114,7 +204,7 @@ const deleteTodo = async (req, res) => {
 
   if (todo.userId != req.decoded.userId) {
     res.status(401).send({
-      message: "This action is forbidden."
+      message: "This action is forbidden.",
     });
     return;
   }
@@ -129,6 +219,7 @@ const deleteTodo = async (req, res) => {
 
 module.exports = {
   addNewTodo,
+  addMultipleTodos,
   getAllTodo,
   getSingleTodo,
   updateTodoStatus,
