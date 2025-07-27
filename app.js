@@ -4,6 +4,7 @@ require("dotenv").config();
 
 const todoRouter = require("./router/router");
 const authRouter = require("./router/userRouter");
+const paystackRouter = require("./router/paystackRouter");
 const uploads = require("./utility/multerConfig")
 const uploadFile = require("./utility/fileUpload");
 
@@ -23,6 +24,7 @@ app.use(express.json());
 
 app.use("/auth", authRouter);
 app.use("/todo", todoRouter);
+app.use("/paystck", paystackRouter);
 
 app.post("/file-uploads", uploads.single("file"), async (req, res) => {
     console.log("File propreties", req.file);
