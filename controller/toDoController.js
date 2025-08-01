@@ -4,9 +4,27 @@ const Joi = require("joi"); // form validation library
 
 const getAllTodo = async (req, res) => {
   try {
+    const { page, limit } = req.params;
+
     console.log("Get decoded value:", req.decoded);
 
-    const todo = await todoModel.find();
+    // const todo = await todoModel
+    //   .find()
+    //   .select("title description")
+    //   .populate("userId", "-password -createdAt -updatedAt");
+
+    // paginate documents
+    const todo = await todoModel.paginate(
+      {},
+      {
+      page: (page && isNaN(page) == false) ? parseInt(page) : 1,
+      limit: (page && isNaN(limit) == false) ? parseInt(limit) : 5,
+      populate: {
+        path: "userId",
+        select: "fullName email"
+      }
+      }
+    );
     res.send(todo);
   } catch (error) {
     console.log(error);
