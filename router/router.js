@@ -9,7 +9,7 @@ const roleBasedAccess = require("../middleware/reoleBasedAccess");
 router.use(checkIfLoggedIn);
 
 // Todo Router
-router.get("/:page/:limit", todoController.getAllTodo);
+router.get("/", todoController.getAllTodo);
 router.post("/todo", roleBasedAccess(["admin"]), todoController.addNewTodo);
 router.post("/todo/multiple", roleBasedAccess(["admin"]), todoController.addMultipleTodos);
 router.get("/single/:id", todoController.getSingleTodo);

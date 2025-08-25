@@ -4,7 +4,30 @@ const Joi = require("joi"); // form validation library
 
 const getAllTodo = async (req, res) => {
   try {
-    const { page, limit } = req.params;
+    console.log("Request's Query Params => ", req.query);
+
+    let { title, sort, taskStatus, page, limit } = req.query;
+    console.log("Title => ", title);
+
+    let query = {};
+    let sortObject = {};
+
+    // Search query
+    if (title && title.length > 2) {
+      query.title = { $regex: title, $options: "i" }; // "i" => case insensitive
+    }
+
+    // Sort by asc/desc date
+    if (sort == "date-asc") {
+      sortObject.createdAt = 1;
+    } else if (sort == "date-desc") {
+      sortObject.createdAt = -1;
+    }
+
+    // Filter by task status
+    if(taskStatus) {
+      query.todoStatus = taskStatus;
+    }
 
     console.log("Get decoded value:", req.decoded);
 
@@ -14,17 +37,15 @@ const getAllTodo = async (req, res) => {
     //   .populate("userId", "-password -createdAt -updatedAt");
 
     // paginate documents
-    const todo = await todoModel.paginate(
-      {},
-      {
-      page: (page && isNaN(page) == false) ? parseInt(page) : 1,
-      limit: (page && isNaN(limit) == false) ? parseInt(limit) : 5,
+    const todo = await todoModel.paginate(query, {
+      page: page && isNaN(page) == false ? parseInt(page) : 1,
+      limit: page && isNaN(limit) == false ? parseInt(limit) : 5,
       populate: {
         path: "userId",
-        select: "fullName email"
-      }
-      }
-    );
+        select: "fullName email",
+      },
+      sort: sortObject
+    });
     res.send(todo);
   } catch (error) {
     console.log(error);
@@ -35,15 +56,14 @@ const getAllTodo = async (req, res) => {
 };
 
 const validateTodo = (title, description) =>
-  Joi
-    .object({
-      title: Joi.string().min(4).required().messages({
-        "string.min": "Titile must be be at least 4 caracters long.",
-      }),
-      description: Joi.string().min(25).required().messages({
-        "string.min": "Description must be be at least 25 caracters long.",
-      }),
-    })
+  Joi.object({
+    title: Joi.string().min(4).required().messages({
+      "string.min": "Titile must be be at least 4 caracters long.",
+    }),
+    description: Joi.string().min(25).required().messages({
+      "string.min": "Description must be be at least 25 caracters long.",
+    }),
+  })
     .min(1)
     .required()
     .validate({ title, description });
@@ -54,15 +74,14 @@ const addNewTodo = async (req, res) => {
   const title = req.body.title;
   const description = req.body.description;
 
-  const { error } = Joi
-    .object({
-      title: Joi.string().min(4).required().messages({
-        "string.min": "Titile must be be at least 4 caracters long.",
-      }),
-      description: Joi.string().min(25).required().messages({
-        "string.min": "Description must be be at least 25 caracters long.",
-      }),
-    })
+  const { error } = Joi.object({
+    title: Joi.string().min(4).required().messages({
+      "string.min": "Titile must be be at least 4 caracters long.",
+    }),
+    description: Joi.string().min(25).required().messages({
+      "string.min": "Description must be be at least 25 caracters long.",
+    }),
+  })
     .min(1)
     .required()
     .validate({ title, description });
@@ -101,21 +120,18 @@ const addMultipleTodos = async (req, res) => {
   const { todos } = req.body;
   // console.log(todos);
 
-  const { error } = Joi
-    .object({
-      todos: Joi
-        .array()
-        .items({
-          title: Joi.string().required(),
-          description: Joi.string().required(),
-        })
-        .min(2)
-        .required()
-        .messages({
-          "array.min": "Todo array must contain at leat 2 todos",
-        }),
-    })
-    .validate({ todos });
+  const { error } = Joi.object({
+    todos: Joi.array()
+      .items({
+        title: Joi.string().required(),
+        description: Joi.string().required(),
+      })
+      .min(2)
+      .required()
+      .messages({
+        "array.min": "Todo array must contain at leat 2 todos",
+      }),
+  }).validate({ todos });
 
   // const { error } = Joi.array({
   //   title: Joi.string().required(),
@@ -176,12 +192,12 @@ const updateTodoStatus = async (req, res) => {
   const isDone = req.body.isDone;
   //   console.log(id, isDone);
 
-  const schema = Joi
-    .string()
+  const schema = Joi.string()
     .valid("pending", "ongoing", "completed")
     .required()
     .messages({
-      "any.only": "isDone can only be one of: 'pending', 'ongoing, or 'completed'",
+      "any.only":
+        "isDone can only be one of: 'pending', 'ongoing, or 'completed'",
     }); // costomized error messages
 
   const { error } = schema.validate(isDone);
