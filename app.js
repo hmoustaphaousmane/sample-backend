@@ -7,6 +7,7 @@ const todoRouter = require("./router/router");
 const authRouter = require("./router/userRouter");
 const paystackRouter = require("./router/paystackRouter");
 const messageRouter = require("./router/messageRouter");
+const cronRouter = require("./router/cronRouter");
 const uploads = require("./utility/multerConfig");
 const uploadFile = require("./utility/fileUpload");
 
@@ -52,6 +53,7 @@ app.use("/auth", authRouter);
 app.use("/todo", todoRouter);
 app.use("/paystck", paystackRouter);
 app.use("/message", messageRouter);
+app.use("/scheduler", cronRouter);
 
 app.post("/file-uploads", uploads.single("file"), async (req, res) => {
   console.log("File propreties", req.file);
@@ -115,7 +117,7 @@ ioServer.on("connection", (socket) => {
   //   socketId: socket.id,
   // });
 
-  socket.join(socket.id);
+  // socket.join(socket.id);
   socket.join(decoded.userId);
 
   // socket.emit("newuserconnected", connections);
