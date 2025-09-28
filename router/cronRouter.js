@@ -5,11 +5,34 @@ const router = express.Router();
 
 router.post("/schedule", (req, res, next) => {
   try {
-    const { message } = req.body;
+    const { message, date } = req.body;
 
-    const task = cron.schedule("* * * * *", () => {
-      console.log(`Task: ${message}`);
-    });
+    let task;
+    if (date) {
+      const theDate = new Date(date); // => 2025-09-28T12:24:05.675Z
+
+      // Extract key features from the date
+      const seconds = theDate.getSeconds();
+      const minutes = theDate.getMinutes();
+      const hour = theDate.getHours();
+      const dayOfTheMonth = theDate.getDate();
+      const month = theDate.getMonth() + 1;
+      const dayOfTheWeek = theDate.getDay(); // 0, 7 => Sunday, 1 => Monday, 2 => Tuesday, ...
+      console.log(
+        `${seconds}sec ${minutes}min ${hour}hr ${dayOfTheMonth}day of the month ${month} ${dayOfTheWeek}(Day of the week) *`
+      );
+
+      task = cron.schedule(
+        `${seconds} ${minutes} ${hour} ${dayOfTheMonth} ${month} *`,
+        () => {
+          console.log(`Task: ${message}`);
+        }
+      );
+    } else {
+      task = cron.schedule("* * * * *", () => {
+        console.log(`Task: ${message}`);
+      });
+    }
 
     console.log(task.id);
 
