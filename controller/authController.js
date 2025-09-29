@@ -66,7 +66,7 @@ const register = async (req, res) => {
   await smtp.sendMail({
     from: process.env.UERNAME,
     to: email,
-    supject: "Company Name - Verify Email",
+    subject: "Company Name - Verify Email",
     html: `
       <div>
         <h1>Verify email</h1>
