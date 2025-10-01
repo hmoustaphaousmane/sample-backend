@@ -7,6 +7,7 @@ const httpServer = require("../app");
 const userModel = require("../schema/user");
 const otpModel = require("../schema/otp");
 const mongoose = require("mongoose");
+const todoModel = require("../schema/todo");
 
 const fullName = "Hassane M. O.";
 const email = `email${Date.now()}@gmail.com`;
@@ -20,6 +21,7 @@ let token = "";
 beforeAll(async () => {
   await userModel.findOneAndDelete({ email });
   await otpModel.deleteMany({});
+  await todoModel.deleteMany({});
 });
 
 // Runs after all tests
@@ -78,11 +80,42 @@ describe("Test for register, verify and login features", () => {
     });
 
     token = response.body.token;
+    console.log(token);
 
     expect(response.status).toBe(200);
     expect(response.body.message).toBe("Login successful");
     expect(response.body.userDetail.fullName).toBe(fullName);
     expect(response.body.userDetail.email).toBe(email);
     expect(response.body.token).toBeTruthy();
+  });
+});
+
+describe("Test to create a todo", () => {
+  console.log(token);
+  test("Create a todo", async () => {
+    const response = await request(httpServer)
+      .post("/todo/todo")
+      .send({
+        title: "My first todo",
+        description: "Here is my first todo. This is its description.",
+      })
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(response.status).toBe(201);
+    expect(response.body.message).toBe("Todo added successfully");
+    expect(response.body.newTodo.title).toBe("My first todo");
+    expect(response.body.newTodo.description).toBe(
+      "Here is my first todo. This is its description."
+    );
+  });
+
+  test('"Fetch todo list"', async () => {
+    const response = await request(httpServer)
+      .get("/todo")
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.docs.length).toBe(1);
+    expect(response.body.docs[0].title).toBe("My first todo");
   });
 });
